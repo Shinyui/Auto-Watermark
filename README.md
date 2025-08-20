@@ -24,10 +24,10 @@ A Node.js script that automatically adds watermarks to images and videos using F
    npm install
    ```
 3. Make sure FFmpeg is installed and accessible in your PATH
-   - If FFmpeg is not in PATH, uncomment and modify the path in `index.js`:
-     ```javascript
-     ffmpeg.setFfmpegPath("/path/to/your/ffmpeg");
-     ```
+   If FFmpeg is not in PATH, uncomment and modify the path in `index.js`:
+   ```javascript
+   ffmpeg.setFfmpegPath("/path/to/your/ffmpeg");
+   ```
 
 ## Configuration
 
