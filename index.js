@@ -1,13 +1,43 @@
 const fs = require("fs");
 const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
+const { Command } = require("commander");
 
-// ⚠️ If the system cannot find ffmpeg, manually specify the path:
-// ffmpeg.setFfmpegPath("/opt/homebrew/bin/ffmpeg");
+const program = new Command();
 
-const INPUT_DIR = "";
-const OUTPUT_DIR = "";
-const WATERMARK = "";
+program
+  .name('auto-watermark')
+  .description('Automatically add watermarks to images and videos')
+  .version('1.0.0')
+  .requiredOption('-i, --input <directory>', 'Input directory containing images/videos')
+  .requiredOption('-o, --output <directory>', 'Output directory for watermarked files')
+  .requiredOption('-w, --watermark <file>', 'Watermark image file path')
+  .option('-p, --position <position>', 'Watermark position: tl (top-left), tr (top-right), bl (bottom-left), br (bottom-right), random (default)', 'random')
+  .option('--ffmpeg-path <path>', 'Custom FFmpeg binary path')
+  .parse();
+
+const options = program.opts();
+
+// Set custom FFmpeg path if provided
+if (options.ffmpegPath) {
+  ffmpeg.setFfmpegPath(options.ffmpegPath);
+}
+
+const INPUT_DIR = options.input;
+const OUTPUT_DIR = options.output;
+const WATERMARK = options.watermark;
+const POSITION_MODE = options.position;
+
+// Validate input arguments
+if (!fs.existsSync(INPUT_DIR)) {
+  console.error(`❌ Input directory does not exist: ${INPUT_DIR}`);
+  process.exit(1);
+}
+
+if (!fs.existsSync(WATERMARK)) {
+  console.error(`❌ Watermark file does not exist: ${WATERMARK}`);
+  process.exit(1);
+}
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -19,13 +49,35 @@ const files = fs.readdirSync(INPUT_DIR).filter(f =>
   f.match(/\.(mp4|mov|avi|mkv|jpg|jpeg|png)$/i)
 );
 
+if (files.length === 0) {
+  console.log('📁 No supported files found in input directory.');
+  process.exit(0);
+}
+
+console.log(`🎯 Found ${files.length} file(s) to process`);
+
 // Define coordinates for four corners
-const positions = [
-  { x: "10", y: "10" },  // Top-left
-  { x: "main_w-overlay_w-10", y: "10" }, // Top-right
-  { x: "10", y: "main_h-overlay_h-10" }, // Bottom-left
-  { x: "main_w-overlay_w-10", y: "main_h-overlay_h-10" } // Bottom-right
-];
+const positions = {
+  tl: { x: "10", y: "10" },  // Top-left
+  tr: { x: "main_w-overlay_w-10", y: "10" }, // Top-right
+  bl: { x: "10", y: "main_h-overlay_h-10" }, // Bottom-left
+  br: { x: "main_w-overlay_w-10", y: "main_h-overlay_h-10" } // Bottom-right
+};
+
+const positionKeys = Object.keys(positions);
+
+// Function to get position based on user preference
+function getPosition(mode) {
+  if (mode === 'random') {
+    const randomKey = positionKeys[Math.floor(Math.random() * positionKeys.length)];
+    return positions[randomKey];
+  } else if (positions[mode]) {
+    return positions[mode];
+  } else {
+    console.error(`❌ Invalid position: ${mode}. Valid options: tl, tr, bl, br, random`);
+    process.exit(1);
+  }
+}
 
 files.forEach(file => {
   const inputPath = path.join(INPUT_DIR, file);
@@ -34,8 +86,8 @@ files.forEach(file => {
   // Check file extension
   const isImage = file.match(/\.(jpg|jpeg|png)$/i);
 
-  // Randomly pick a position
-  const pos = positions[Math.floor(Math.random() * positions.length)];
+  // Get position based on user preference
+  const pos = getPosition(POSITION_MODE);
 
   const command = ffmpeg(inputPath)
     .input(WATERMARK)

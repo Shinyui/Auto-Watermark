@@ -1,15 +1,30 @@
 {
   "name": "auto-watermark",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
+  "description": "A CLI tool to automatically add watermarks to images and videos using FFmpeg",
+  "license": "MIT",
   "author": "",
   "type": "commonjs",
   "main": "index.js",
+  "bin": {
+    "auto-watermark": "./index.js"
+  },
+  "keywords": [
+    "watermark",
+    "ffmpeg",
+    "cli",
+    "image",
+    "video",
+    "batch"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "commander": "^14.0.0",
     "fluent-ffmpeg": "^2.1.3"
+  },
+  "engines": {
+    "node": ">=12.0.0"
   }
 }
